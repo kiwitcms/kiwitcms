@@ -199,7 +199,7 @@ def text_fields(model):
 def example_is_valid(example: dict, method_name: str) -> bool:
     """Reject examples which inspect_rpc_args() would refuse."""
     try:
-        KiwiTCMSHandlerMixin.inspect_rpc_args(method_name, [example])
+        KiwiTCMSHandlerMixin.inspect_rpc_args(method_name, [example], user=None)
     except RPCInvalidRequest:
         return False
     return True

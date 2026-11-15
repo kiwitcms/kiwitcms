@@ -113,7 +113,9 @@ class KiwiTCMSHandlerMixin:
                 yield from __class__.dict_keys(value, depth + 1)
 
     @staticmethod
-    def inspect_rpc_args(method_name, args=(), kwargs=None):
+    def inspect_rpc_args(
+        method_name, args=(), kwargs=None, user=None
+    ):  # pylint: disable=unused-argument
         if method_name.endswith(".create") or method_name.endswith(".update"):
             return
 
@@ -140,7 +142,8 @@ class KiwiTCMSHandlerMixin:
             self.inspect_rpc_args(
                 rpc_request.method_name,
                 rpc_request.args,
-                getattr(rpc_request, "kwargs", None),
+                kwargs=getattr(rpc_request, "kwargs", None),
+                user=getattr(context.request, "user", None),
             )
         except Exception as exc:  # pylint: disable=broad-exception-caught
             rpc_exc = context.server.on_error(exc, context)
@@ -158,7 +161,8 @@ class KiwiTCMSHandlerMixin:
             self.inspect_rpc_args(
                 rpc_request.method_name,
                 rpc_request.args,
-                getattr(rpc_request, "kwargs", None),
+                kwargs=getattr(rpc_request, "kwargs", None),
+                user=getattr(context.request, "user", None),
             )
         except Exception as exc:  # pylint: disable=broad-exception-caught
             rpc_exc = context.server.on_error(exc, context)
