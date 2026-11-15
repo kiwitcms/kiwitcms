@@ -13,7 +13,7 @@ from parameterized import parameterized
 from tcms.core.history import history_email_for
 from tcms.core.utils.mailto import mailto
 from tcms.testcases.helpers.email import get_case_notification_recipients
-from tcms.testcases.models import BugSystem
+from tcms.testcases.models import BugSystem, Template
 from tcms.tests import BasePlanCase, deny_certain_email_addresses
 from tcms.tests.factories import (
     ComponentFactory,
@@ -294,3 +294,13 @@ class TestCaseCalculateExpectedDuration(TestCase):
             setup_duration=setup_duration, testing_duration=testing_duration
         )
         self.assertEqual(test_case.expected_duration, expected)
+
+
+class TestCIGETemplate(TestCase):
+    """Test the template seeded by migration 0026_add_cige_template"""
+
+    def test_template_exists_with_all_sections(self):
+        template = Template.objects.get(name="Context, Intent, Guardrails, Execution")
+
+        for section in ("Context", "Intent", "Guardrails", "Execution"):
+            self.assertIn(f"**{section}**", template.text)
