@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import BuildForm
 from tcms.management.models import Build
@@ -60,7 +61,7 @@ def create(values: BuildValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Build` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *management.add_build* permission
     """
     if "is_active" not in values:
@@ -71,7 +72,7 @@ def create(values: BuildValues):
         build = form.save()
         return model_to_dict(build)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -92,7 +93,7 @@ def update(build_id, values: BuildUpdateValues):
         :rtype: dict
         :raises Build.DoesNotExist: if build not found
         :raises PermissionDenied: if missing *management.change_build* permission
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
     """
     build = Build.objects.get(pk=build_id)
     form = BuildUpdateForm(values, instance=build)
@@ -101,4 +102,4 @@ def update(build_id, values: BuildUpdateValues):
         build = form.save()
         return model_to_dict(build)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

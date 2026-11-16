@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 import tcms_api
 from attachments.models import Attachment
 from django.contrib.auth.models import Permission
-from django.core.exceptions import ValidationError
 from django.utils import timezone
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCInvalidParams
 from parameterized import parameterized
 
 from tcms.core.helpers import comments
@@ -32,11 +32,13 @@ from tcms.xmlrpc_wrapper import XmlRPCFault
 
 class TestValidateEmail(unittest.TestCase):
     def test_non_list_email_collection(self):
-        with self.assertRaisesRegex(TypeError, "cc_list should be a list object."):
+        with self.assertRaisesRegex(
+            RPCInvalidParams, "cc_list should be a list object."
+        ):
             _validate_cc_list("example@example.com")
 
     def test_invalid_email(self):
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(RPCInvalidParams):
             _validate_cc_list(["@example.com"])
 
     def test_valid_email_list(self):  # pylint: disable=no-self-use
@@ -72,10 +74,10 @@ class TestAddNotificationCCPermission(APIPermissionsTestCase):
 
 class TestAddNotificationCC(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.add_notification_cc(-1, ["example@example.com"])
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestGetNotificationCCPermission(APIPermissionsTestCase):
@@ -103,10 +105,10 @@ class TestGetNotificationCCPermission(APIPermissionsTestCase):
 
 class TestGetNotificationCC(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.get_notification_cc(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestRemoveNotificationCCPermission(APIPermissionsTestCase):
@@ -139,10 +141,10 @@ class TestRemoveNotificationCCPermission(APIPermissionsTestCase):
 
 class TestRemoveNotificationCC(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.remove_notification_cc(-1, ["example@example.com"])
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestCaseFilter(APITestCase):
@@ -849,12 +851,12 @@ class TestAddComponent(APITestCase):
         self.assertEqual(result["name"], self.good_component.name)
 
     def test_add_component_from_another_product_is_not_allowed(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "Component matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.add_component(
                 self.test_case.pk, self.bad_component.name
             )
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestRemoveComponentPermission(APIPermissionsTestCase):
@@ -889,10 +891,10 @@ class TestRemoveComponentPermission(APIPermissionsTestCase):
 
 class TestRemoveComponent(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.remove_component(-1, -1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestCaseAddCommentFromRegularUser(APIPermissionsTestCase):
@@ -966,10 +968,10 @@ class TestCaseAddCommentFromSuperUser(TestCaseAddCommentFromRegularUser):
 
 class TestAddComment(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.add_comment(-1, "Hello World!")
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestRemoveCommentPermissions(APIPermissionsTestCase):
@@ -1002,10 +1004,10 @@ class TestRemoveCommentPermissions(APIPermissionsTestCase):
 
 class TestRemoveComment(APITestCase):
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.remove_comment(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestCaseSortkeysPermissions(APIPermissionsTestCase):
@@ -1128,10 +1130,10 @@ class TestListAttachments(APITestCase):
         self.assertEqual(len(attachments), 1)
 
     def test_invalid_testcase_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestCase matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestCase.list_attachments(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestListAttachmentPermissions(APIPermissionsTestCase):

@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import ComponentForm
 from tcms.management.models import Component
@@ -62,7 +63,7 @@ def create(values: ComponentValues, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`tcms.management.models.Component` object
         :rtype: dict
-        :raises ValueError: if data validation fails
+        :raises RPCException: if data validation fails
         :raises PermissionDenied: if missing *management.add_component* permission
 
     .. note::
@@ -83,7 +84,7 @@ def create(values: ComponentValues, rpc_context=None):
         component = form.save()
         return model_to_dict(component)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -106,7 +107,7 @@ def update(component_id, values: ComponentUpdateValues, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`tcms.management.models.Component` object
         :rtype: dict
-        :raises ValueError: if data validation fails
+        :raises RPCException: if data validation fails
         :raises PermissionDenied: if missing *management.change_component* permission
     """
     request = rpc_context.request
@@ -117,4 +118,4 @@ def update(component_id, values: ComponentUpdateValues, rpc_context=None):
         component = form.save()
         return model_to_dict(component)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

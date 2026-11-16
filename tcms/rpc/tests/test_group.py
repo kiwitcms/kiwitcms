@@ -5,6 +5,7 @@
 # pylint: disable=attribute-defined-outside-init
 
 from django.contrib.auth.models import Group
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.rpc.tests.utils import APIPermissionsTestCase
 from tcms.tests import remove_perm_from_user, user_should_have_perm
@@ -59,8 +60,10 @@ class TestGroupPermissions(APIPermissionsTestCase):
 
 class TestGroupPermissionsWithNonExistentGroup(TestGroupPermissions):
     def verify_api_with_permission(self):
-        with self.assertRaisesRegex(XmlRPCFault, "Group matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.Group.permissions(99999)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestGroupUsersOnlyWithViewGroupPermission(APIPermissionsTestCase):
@@ -131,5 +134,7 @@ class TestGroupUsersWithBothPermissions(APIPermissionsTestCase):
 
 class TestGroupUsersWithNonExistentGroup(TestGroupUsersWithBothPermissions):
     def verify_api_with_permission(self):
-        with self.assertRaisesRegex(XmlRPCFault, "Group matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.Group.users(99999)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)

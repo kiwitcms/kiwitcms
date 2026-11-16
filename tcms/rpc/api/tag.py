@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from django.conf import settings
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import TagForm
 from tcms.management.models import Tag
@@ -51,7 +52,7 @@ def create(values: TagValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Tag` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *management.add_tag* permission
 
     .. versionadded:: 15.2
@@ -62,4 +63,4 @@ def create(values: TagValues):
         tag = form.save()
         return model_to_dict(tag)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

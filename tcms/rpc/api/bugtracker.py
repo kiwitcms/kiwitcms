@@ -5,6 +5,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.annotations import FormValues, ModelQuery
 from tcms.rpc.decorators import permissions_required
@@ -63,7 +64,7 @@ def create(values: BugSystemValues):
         :type values: dict
         :return: Serialized :class:`tcms.testcases.models.BugSystem` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *testcases.add_bugsystem* permission
     """
     form = BugSystemAdminForm(values)
@@ -76,4 +77,4 @@ def create(values: BugSystemValues):
 
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, F
 from django.db.models.functions import Coalesce
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.core.contrib.linkreference.models import LinkReference
 from tcms.core.helpers import comments
@@ -233,7 +234,7 @@ def update(execution_id, values: TestExecutionUpdateValues, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`tcms.testruns.models.TestExecution` object
         :rtype: dict
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
         :raises PermissionDenied: if missing *testruns.change_testexecution* permission
     """
     request = rpc_context.request
@@ -253,7 +254,7 @@ def update(execution_id, values: TestExecutionUpdateValues, rpc_context=None):
     if form.is_valid():
         test_execution = form.save()
     else:
-        raise ValueError(list(form.errors.items()))
+        raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
     result = model_to_dict(test_execution)
 
@@ -294,8 +295,8 @@ def add_link(values: LinkReferenceValues, update_tracker=False, rpc_context=None
         :return: Serialized
                  :class:`tcms.core.contrib.linkreference.models.LinkReference` object
         :rtype: dict
-        :raises RuntimeError: if operation not successfull
-        :raises ValueError: if input validation fails
+        :raises RPCException: if operation not successfull
+        :raises RPCException: if input validation fails
 
         .. note::
 
@@ -311,7 +312,7 @@ def add_link(values: LinkReferenceValues, update_tracker=False, rpc_context=None
     if form.is_valid():
         link = form.save()
     else:
-        raise ValueError(list(form.errors.items()))
+        raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
     request = rpc_context.request
     tracker = tracker_from_url(link.url, request)
@@ -591,7 +592,7 @@ def create(values: TestExecutionValues, rpc_context=None):
         :return: Serialized :class:`tcms.testruns.models.TestExecution` object
         :rtype: dict
         :raises PermissionDenied: if missing *testruns.add_testexecution* permission
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
 
     .. versionadded:: 15.3
     """
@@ -602,7 +603,7 @@ def create(values: TestExecutionValues, rpc_context=None):
         test_execution = form.save()
         return model_to_dict(test_execution)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(

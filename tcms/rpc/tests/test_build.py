@@ -3,6 +3,7 @@
 
 
 from django.test import override_settings
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.rpc.tests.utils import APITestCase
 from tcms.tests.factories import BuildFactory, VersionFactory
@@ -85,8 +86,10 @@ class BuildUpdate(APITestCase):
         cls.build_3 = BuildFactory(version=cls.version)
 
     def test_build_update_with_non_existing_build(self):
-        with self.assertRaisesRegex(XmlRPCFault, "Build matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.Build.update(-99, {})
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_build_update_with_no_perms(self):
         with self.assertRaisesRegex(
@@ -101,7 +104,7 @@ class BuildUpdate(APITestCase):
 
     def test_build_update_with_multi_id(self):
         builds = (self.build_1.pk, self.build_2.pk, self.build_3.pk)
-        with self.assertRaisesRegex(XmlRPCFault, "Invalid parameter"):
+        with self.assertRaisesRegex(XmlRPCFault, "Internal error"):
             self.rpc_client.Build.update(builds, {})
 
     def test_build_update_with_non_existing_version_id(self):

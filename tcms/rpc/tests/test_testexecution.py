@@ -8,6 +8,7 @@ from attachments.models import Attachment
 from django.forms.models import model_to_dict
 from django.test import override_settings
 from django.utils import timezone
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.core.contrib.linkreference.models import LinkReference
 from tcms.core.helpers import comments
@@ -49,10 +50,10 @@ class TestExecutionGetComments(APITestCase):
             self.assertIn(comment["comment"], self.comments)
 
     def test_get_comments_non_existing_execution(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestExecution matching query does not exist."
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestExecution.get_comments(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestExecutionGetCommentsPermissions(APIPermissionsTestCase):
@@ -502,10 +503,10 @@ class TestExecutionHistory(APITestCase):
         cls.execution = TestExecutionFactory()
 
     def test_history_for_non_existing_execution(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestExecution matching query does not exist."
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestExecution.history(-5)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_history_new_execution(self):
         execution = TestExecutionFactory()
@@ -916,10 +917,10 @@ class TestListAttachmentsPermissions(APIPermissionsTestCase):
 
 class TestListAttachmentsForUnknownId(TestListAttachmentsPermissions):
     def verify_api_with_permission(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestExecution matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestExecution.list_attachments(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestCountAttachmentsPermissions(APIPermissionsTestCase):

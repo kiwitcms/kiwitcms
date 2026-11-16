@@ -1,5 +1,5 @@
 import django.contrib.auth
-from django.core.exceptions import PermissionDenied
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.views import rpc_method
 
@@ -26,13 +26,13 @@ def login(
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Session ID
         :rtype: str
-        :raises PermissionDenied: if username or password doesn't match or missing
+        :raises RPCException: if username or password doesn't match or missing
     """
     # Get the current request
     request = rpc_context.request
 
     if not username or not password:
-        raise PermissionDenied("Username and password is required")
+        raise RPCException(RPC_INTERNAL_ERROR, "Username and password is required")
 
     user = django.contrib.auth.authenticate(
         request, username=username, password=password
@@ -41,7 +41,7 @@ def login(
         django.contrib.auth.login(request, user)
         return request.session.session_key
 
-    raise PermissionDenied("Wrong username or password")
+    raise RPCException(RPC_INTERNAL_ERROR, "Wrong username or password")
 
 
 @rpc_method(

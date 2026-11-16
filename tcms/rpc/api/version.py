@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import VersionForm
 from tcms.management.models import Version
@@ -49,7 +50,7 @@ def create(values: VersionValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Version` object
         :rtype: dict
-        :raises ValueError: if input data validation fails
+        :raises RPCException: if input data validation fails
         :raises PermissionDenied: if missing *management.add_version* permission
 
     Example::
@@ -63,4 +64,4 @@ def create(values: VersionValues):
         version = form.save()
         return model_to_dict(version)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

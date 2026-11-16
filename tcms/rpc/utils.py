@@ -11,6 +11,7 @@ from attachments.models import Attachment
 from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from mock import MagicMock
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.core.utils import request_host_link
 
@@ -96,12 +97,14 @@ def add_attachment(obj_id, app_model, user, filename, b64content):
     response = attachment_views.add_attachment(request, app, model, obj_id)
 
     if response.status_code == HTTPStatus.NOT_FOUND:
-        raise RuntimeError(f"Adding attachment to {app_model}({obj_id}) failed")
+        raise RPCException(
+            RPC_INTERNAL_ERROR, f"Adding attachment to {app_model}({obj_id}) failed"
+        )
 
     if response.status_code == HTTPStatus.BAD_REQUEST:
         # response is application/json and this should be a dict
         errors = json.loads(response.content)
-        raise ValueError(errors)
+        raise RPCException(RPC_INTERNAL_ERROR, str(errors))
 
 
 def filter_distinct(qs):

@@ -4,6 +4,7 @@
 
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.rpc.api.user import _get_user_dict
 from tcms.rpc.tests.utils import APIPermissionsTestCase, APITestCase
@@ -121,14 +122,18 @@ class TestUserJoin(APITestCase):
         self.assertTrue(user_added_to_group, "User should be added to group.")
 
     def test_join_nonexistent_user(self):
-        with self.assertRaisesRegex(XmlRPCFault, "User matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.User.join_group("nonexistent user", self.group.name)
 
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
+
     def test_join_nonexistent_group(self):
-        with self.assertRaisesRegex(XmlRPCFault, "Group matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.User.join_group(
                 self.user.username, "nonexistent group name"
             )
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestUserUpdate(APITestCase):
@@ -323,9 +328,7 @@ class TestApiAccessForDeactivatedUser(APITestCase):
         self.api_user.is_active = False
         self.api_user.save()
 
-        with self.assertRaisesRegex(
-            XmlRPCFault, "Internal error: Wrong username or password"
-        ):
+        with self.assertRaisesRegex(XmlRPCFault, "Wrong username or password"):
             self.rpc_client.User.filter({})
 
 

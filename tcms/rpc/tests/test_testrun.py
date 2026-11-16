@@ -7,6 +7,7 @@ import tcms_api
 from attachments.models import Attachment
 from django.contrib.auth.models import Permission
 from django.utils.translation import gettext_lazy as _
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.rpc.tests.utils import APIPermissionsTestCase, APITestCase
 from tcms.testcases.models import TestCaseStatus
@@ -700,10 +701,10 @@ class TestListAttachmentsPermissions(APIPermissionsTestCase):
 
 class TestListAttachmentsForUnknownId(TestListAttachmentsPermissions):
     def verify_api_with_permission(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestRun matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestRun.list_attachments(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestAddAttachmentPermissions(APIPermissionsTestCase):

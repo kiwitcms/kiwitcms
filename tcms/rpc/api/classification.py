@@ -5,6 +5,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import ClassificationForm
 from tcms.management.models import Classification
@@ -53,7 +54,7 @@ def create(values: ClassificationValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Classification` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *management.add_classification* permission
     """
     form = ClassificationForm(values)
@@ -62,4 +63,4 @@ def create(values: ClassificationValues):
         classification = form.save()
         return model_to_dict(classification)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from django.db.models import Count
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.models import Tag
 from tcms.rpc import utils
@@ -38,7 +39,7 @@ def create(values: TestPlanValues, rpc_context=None):
         :return: Serialized :class:`tcms.testplans.models.TestPlan` object
         :rtype: dict
         :raises PermissionDenied: if missing *testplans.add_testplan* permission
-        :raises ValueError: if data validation fails
+        :raises RPCException: if data validation fails
 
         Minimal parameters::
 
@@ -78,7 +79,7 @@ def create(values: TestPlanValues, rpc_context=None):
         result["create_date"] = test_plan.create_date
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -108,7 +109,7 @@ def clone(plan_id, values: ClonePlanValues | None = None, rpc_context=None):
         :rtype: dict
         :raises TestPlan.DoesNotExist: if object specified by PK is missing
         :raises PermissionDenied: if missing *testplans.add_testplan* permission
-        :raises ValueError: if data validation fails
+        :raises RPCException: if data validation fails
 
         Minimal parameters::
 
@@ -146,7 +147,7 @@ def clone(plan_id, values: ClonePlanValues | None = None, rpc_context=None):
         result["create_date"] = cloned_plan.create_date
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -264,7 +265,7 @@ def update(plan_id, values: TestPlanUpdateValues, rpc_context=None):
         :rtype: dict
         :raises TestPlan.DoesNotExist: if object specified by PK doesn't exist
         :raises PermissionDenied: if missing *testplans.change_testplan* permission
-        :raises ValueError: if validations fail
+        :raises RPCException: if validations fail
     """
     request = rpc_context.request
     test_plan = TestPlan.objects.get(pk=plan_id)
@@ -278,7 +279,7 @@ def update(plan_id, values: TestPlanUpdateValues, rpc_context=None):
         result["create_date"] = test_plan.create_date
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(

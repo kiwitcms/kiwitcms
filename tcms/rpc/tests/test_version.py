@@ -62,14 +62,10 @@ class TestVersionCreateFunctionality(APITestCase):
             self.rpc_client.Version.create({"product": -9, "value": "0.1"})
 
     def test_add_version_with_missing_argument(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "Internal error:.*value.*This field is required"
-        ):
+        with self.assertRaisesRegex(XmlRPCFault, ".*value.*This field is required"):
             self.rpc_client.Version.create({"product": self.product.pk})
 
-        with self.assertRaisesRegex(
-            XmlRPCFault, "Internal error:.*product.*This field is required"
-        ):
+        with self.assertRaisesRegex(XmlRPCFault, ".*product.*This field is required"):
             self.rpc_client.Version.create({"value": "0.1"})
 
     def test_add_version_with_extra_unrecognized_field(self):

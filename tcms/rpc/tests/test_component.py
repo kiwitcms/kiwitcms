@@ -2,6 +2,8 @@
 # pylint: disable=attribute-defined-outside-init, invalid-name
 
 
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
+
 from tcms.rpc.tests.utils import APITestCase
 from tcms.tests.factories import ComponentFactory, ProductFactory
 from tcms.xmlrpc_wrapper import XmlRPCFault
@@ -92,10 +94,10 @@ class TestUpdateComponent(APITestCase):
         self.assertEqual(com["name"], "Updated")
 
     def test_update_component_with_non_exist(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "Component matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.Component.update(-99, {"name": "new name"})
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_update_component_with_no_perms(self):
         with self.assertRaisesRegex(

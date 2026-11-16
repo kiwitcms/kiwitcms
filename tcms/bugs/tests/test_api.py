@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from attachments.models import Attachment
 from django.conf import settings
 from django.utils import timezone
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.xmlrpc_wrapper import XmlRPCFault
 
@@ -59,8 +60,10 @@ class TestAddTag(APITestCase):
         cls.tag = TagFactory()
 
     def test_add_tag_to_non_existent_bug(self):
-        with self.assertRaisesRegex(XmlRPCFault, "Bug matching query does not exist"):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.Bug.add_tag(-9, self.tag.name)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestRemoveTagPermissions(APIPermissionsTestCase):

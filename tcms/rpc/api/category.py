@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.annotations import FormValues, ModelQuery
 from tcms.rpc.api.forms.testcase import CategoryForm
@@ -49,7 +50,7 @@ def create(values: CategoryValues):
         :type values: dict
         :return: Serialized :class:`tcms.testcases.models.Category` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *testcases.add_category* permission
     """
     form = CategoryForm(values)
@@ -58,4 +59,4 @@ def create(values: CategoryValues):
         category = form.save()
         return model_to_dict(category)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

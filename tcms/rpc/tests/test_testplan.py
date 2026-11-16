@@ -8,6 +8,7 @@ from attachments.models import Attachment
 from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.utils import timezone
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 
 from tcms.rpc.tests.utils import APIPermissionsTestCase, APITestCase
 from tcms.testcases.models import TestCasePlan
@@ -182,9 +183,10 @@ class TestUpdate(APITestCase):
         cls.plan = TestPlanFactory()
 
     def test_not_exist_test_plan_id(self):
-        err_msg = "Internal error: TestPlan matching query does not exist."
-        with self.assertRaisesRegex(XmlRPCFault, err_msg):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestPlan.update(-1, {"text": "This has been updated"})
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_invalid_field_value(self):
         err_msg = (
@@ -473,10 +475,10 @@ class TestClone(APITestCase):
             self.rpc_client.TestPlan.clone(self.plan.pk, {"parent": other_plan.pk})
 
     def test_clone_nonexistent_plan(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestPlan matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestPlan.clone(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestClonePermission(APIPermissionsTestCase):
@@ -572,10 +574,10 @@ class TestListAttachments(APITestCase):
         self.assertEqual(1, len(attachments))
 
     def test_list_attachments_with_wrong_plan_id(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestPlan matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestPlan.list_attachments(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
 
 class TestListAttachmentsPermissions(APIPermissionsTestCase):
@@ -683,7 +685,7 @@ class TestTree(APITestCase):
         self.assertEqual(family3, family4)
 
     def test_raises_when_testplan_not_found(self):
-        with self.assertRaisesRegex(
-            XmlRPCFault, "TestPlan matching query does not exist"
-        ):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.TestPlan.tree(-1)
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)

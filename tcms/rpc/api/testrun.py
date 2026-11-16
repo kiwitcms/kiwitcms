@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.models import Tag
 from tcms.rpc import utils
@@ -36,7 +37,7 @@ def add_case(run_id, case_id):
         :rtype: list(dict)
         :raises DoesNotExist: if objects specified by the PKs don't exist
         :raises PermissionDenied: if missing *testruns.add_testexecution* permission
-        :raises RuntimeError: if test case status is not CONFIRMED
+        :raises RPCException: if test case status is not CONFIRMED
     """
     run = TestRun.objects.get(pk=run_id)
     case = TestCase.objects.get(pk=case_id)
@@ -45,7 +46,7 @@ def add_case(run_id, case_id):
         return annotate_executions_with_properties(run.executions.filter(case=case))
 
     if not case.case_status.is_confirmed:
-        raise RuntimeError(f"TC-{case.pk} status is not confirmed")
+        raise RPCException(RPC_INTERNAL_ERROR, f"TC-{case.pk} status is not confirmed")
 
     # always add new TEs at the end of TR
     sortkey = 10
@@ -211,7 +212,7 @@ def create(values: TestRunValues, rpc_context=None):
         :return: Serialized :class:`tcms.testruns.models.TestRun` object
         :rtype: dict
         :raises PermissionDenied: if missing *testruns.add_testrun* permission
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
 
         Example::
 
@@ -233,7 +234,7 @@ def create(values: TestRunValues, rpc_context=None):
         test_run = form.save()
         return model_to_dict(test_run, exclude=["cc", "tag"])
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -303,7 +304,7 @@ def update(run_id, values: TestRunUpdateValues, rpc_context=None):
         :return: Serialized :class:`tcms.testruns.models.TestRun` object
         :rtype: dict
         :raises PermissionDenied: if missing *testruns.change_testrun* permission
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
     """
     request = rpc_context.request
     test_run = TestRun.objects.get(pk=run_id)
@@ -324,7 +325,7 @@ def update(run_id, values: TestRunUpdateValues, rpc_context=None):
         result["stop_date"] = test_run.stop_date
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -347,14 +348,14 @@ def add_cc(run_id, username, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :raises DoesNotExist: if test run specified by the PK doesn't exist
         :raises PermissionDenied: if missing *testruns.change_testrun* permission
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
     """
     request = rpc_context.request
     test_run = TestRun.objects.get(pk=run_id)
     form = UserForm({"user": username}, request=request)
 
     if not form.is_valid():
-        raise ValueError(list(form.errors.items()))
+        raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
     test_run.add_cc(form.cleaned_data["user"])
 
@@ -379,14 +380,14 @@ def remove_cc(run_id, username, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :raises DoesNotExist: if test run specified by the PK doesn't exist
         :raises PermissionDenied: if missing *testruns.change_testrun* permission
-        :raises ValueError: if data validations fail
+        :raises RPCException: if data validations fail
     """
     request = rpc_context.request
     test_run = TestRun.objects.get(pk=run_id)
     form = UserForm({"user": username}, request=request)
 
     if not form.is_valid():
-        raise ValueError(list(form.errors.items()))
+        raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
     test_run.remove_cc(form.cleaned_data["user"])
 

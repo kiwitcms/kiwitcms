@@ -7,6 +7,7 @@ from django.db.models.functions import Coalesce
 from django.db.utils import NotSupportedError
 from django.forms import EmailField, ValidationError
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException, RPCInvalidParams
 
 from tcms.core import helpers
 from tcms.management.models import Component, Tag
@@ -87,11 +88,11 @@ def _validate_cc_list(cc_list):
 
     :param cc_list: List of email addresses
     :type cc_list: list
-    :raises TypeError or ValidationError: if addresses are not valid.
+    :raises RPCInvalidParams: if addresses are not valid.
     """
 
     if not isinstance(cc_list, list):
-        raise TypeError("cc_list should be a list object.")
+        raise RPCInvalidParams("cc_list should be a list object.")
 
     field = EmailField(
         required=True,
@@ -106,7 +107,7 @@ def _validate_cc_list(cc_list):
             invalid_emails.append(item)
 
     if invalid_emails:
-        raise ValidationError(
+        raise RPCInvalidParams(
             field.error_messages["invalid"] % ", ".join(invalid_emails)
         )
 
@@ -125,7 +126,7 @@ def add_notification_cc(case_id, cc_list):
         :type case_id: int
         :param cc_list: List of email addresses
         :type cc_list: list(str)
-        :raises TypeError or ValidationError: if email validation fails
+        :raises RPCInvalidParams: if email validation fails
         :raises PermissionDenied: if missing *testcases.change_testcase* permission
         :raises TestCase.DoesNotExist: if object with case_id doesn't exist
     """
@@ -150,7 +151,7 @@ def remove_notification_cc(case_id, cc_list):
         :type case_id: int
         :param cc_list: List of email addresses
         :type cc_list: list(str)
-        :raises TypeError or ValidationError: if email validation fails
+        :raises RPCInvalidParams: if email validation fails
         :raises PermissionDenied: if missing *testcases.change_testcase* permission
         :raises TestCase.DoesNotExist: if object with case_id doesn't exist
     """
@@ -245,7 +246,7 @@ def create(values: TestCaseValues, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`tcms.testcases.models.TestCase` object
         :rtype: dict
-        :raises ValueError: if form is not valid
+        :raises RPCException: if form is not valid
         :raises PermissionDenied: if missing *testcases.add_testcase* permission
 
         Minimal test case parameters::
@@ -281,7 +282,7 @@ def create(values: TestCaseValues, rpc_context=None):
         result["testing_duration"] = str(result["testing_duration"])
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
@@ -422,7 +423,7 @@ def update(case_id, values: TestCaseUpdateValues, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`tcms.testcases.models.TestCase` object
         :rtype: dict
-        :raises ValueError: if form is not valid
+        :raises RPCException: if form is not valid
         :raises TestCase.DoesNotExist: if object specified by PK doesn't exist
         :raises PermissionDenied: if missing *testcases.change_testcase* permission
     """
@@ -454,7 +455,7 @@ def update(case_id, values: TestCaseUpdateValues, rpc_context=None):
 
         return result
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(

@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.annotations import FormValues, ModelQuery
 from tcms.rpc.api.forms.testrun import EnvironmentForm
@@ -133,7 +134,7 @@ def create(values: EnvironmentValues):
         :type values: dict
         :return: Serialized :class:`tcms.testruns.models.Environment` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *testruns.add_environment* permission
     """
     form = EnvironmentForm(values)
@@ -141,4 +142,4 @@ def create(values: EnvironmentValues):
         environment = form.save()
         return model_to_dict(environment)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

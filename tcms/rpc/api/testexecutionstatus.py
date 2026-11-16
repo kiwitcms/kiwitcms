@@ -5,6 +5,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.annotations import FormValues, ModelQuery
 from tcms.rpc.api.forms.testrun import TestExecutionStatusForm
@@ -55,7 +56,7 @@ def create(values: TestExecutionStatusValues):
         :type values: dict
         :return: Serialized :class:`tcms.testruns.models.TestExecutionStatus` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *testruns.add_testexecutionstatus* permission
 
     .. versionadded:: 15.2
@@ -66,4 +67,4 @@ def create(values: TestExecutionStatusValues):
         status = form.save()
         return model_to_dict(status)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

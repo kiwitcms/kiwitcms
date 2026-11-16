@@ -3,7 +3,7 @@
 
 import base64
 
-from django.utils.translation import gettext_lazy as _
+from modernrpc.exceptions import RPC_INTERNAL_ERROR
 from parameterized import parameterized
 
 from tcms.rpc.tests.utils import APITestCase
@@ -22,10 +22,10 @@ class TestValidators(APITestCase):
         with open(f"tests/ui/data/{file_name}", "rb") as svg_file:
             b64 = base64.b64encode(svg_file.read()).decode()
 
-            tag_name = "script"
-            message = str(_(f"File contains forbidden tag: <{tag_name}>"))
-            with self.assertRaisesRegex(XmlRPCFault, message):
+            with self.assertRaises(XmlRPCFault) as ctx:
                 self.rpc_client.User.add_attachment("inline_javascript.svg", b64)
+
+            self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     @parameterized.expand(
         [
@@ -38,23 +38,25 @@ class TestValidators(APITestCase):
         with open(f"tests/ui/data/{file_name}", "rb") as svg_file:
             b64 = base64.b64encode(svg_file.read()).decode()
 
-            attr_name = "onload"
-            message = str(_(f"File contains forbidden attribute: `{attr_name}`"))
-            with self.assertRaisesRegex(XmlRPCFault, message):
+            with self.assertRaises(XmlRPCFault) as ctx:
                 self.rpc_client.User.add_attachment("image.svg", b64)
 
+            self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
+
     def test_uploading_filename_ending_in_dot_exe_should_fail(self):
-        message = str(_("Uploading executable files is forbidden"))
-        with self.assertRaisesRegex(XmlRPCFault, message):
+        with self.assertRaises(XmlRPCFault) as ctx:
             self.rpc_client.User.add_attachment("hello.exe", "a2l3aXRjbXM=")
+
+        self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_uploading_real_exe_file_should_fail(self):
         with open("tests/ui/data/reactos_csrss.exe", "rb") as exe_file:
             b64 = base64.b64encode(exe_file.read()).decode()
 
-            message = str(_("Uploading executable files is forbidden"))
-            with self.assertRaisesRegex(XmlRPCFault, message):
+            with self.assertRaises(XmlRPCFault) as ctx:
                 self.rpc_client.User.add_attachment("csrss.exe_from_reactos", b64)
+
+            self.assertEqual(ctx.exception.faultCode, RPC_INTERNAL_ERROR)
 
     def test_uploading_txt_file_should_pass(self):
         with open("tests/ui/data/change-report.txt", "rb") as txt_file:

@@ -1,4 +1,5 @@
 from attachments.views import delete_attachment
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc.decorators import permissions_required
 from tcms.rpc.views import rpc_method
@@ -20,10 +21,11 @@ def remove_attachment(attachment_id, rpc_context=None):
         :param rpc_context: Provides access to the current request, protocol,
                 entry point name and handler instance from the rpc method
         :type rpc_context: modernrpc.core.RpcRequestContext
-        :raises Exception: if attachment doesn't exist,
-                 InternalError or removal fails
+        :raises RPCException: if attachment doesn't exist or removal fails
     """
     request = rpc_context.request
     response = delete_attachment(request, attachment_id)
     if response.status_code == 404:
-        raise RuntimeError(f"Removing attachment {attachment_id} failed")
+        raise RPCException(
+            RPC_INTERNAL_ERROR, f"Removing attachment {attachment_id} failed"
+        )

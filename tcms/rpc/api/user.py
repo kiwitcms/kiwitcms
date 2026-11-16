@@ -4,8 +4,8 @@ from attachments.models import Attachment
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.exceptions import PermissionDenied
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.rpc import utils
 from tcms.rpc.annotations import ModelQuery
@@ -65,7 +65,7 @@ def filter(  # pylint: disable=redefined-builtin
         :return: Serialized list of :class:`django.contrib.auth.models.User` objects
                  without the password field
         :rtype: list(dict)
-        :raises PermissionDenied: if missing the *auth.view_user* permission
+        :raises RPCException: if missing the *auth.view_user* permission
 
     .. note::
 
@@ -116,7 +116,7 @@ def update(
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized :class:`django.contrib.auth.models.User` object
         :rtype: dict
-        :raises PermissionDenied: if missing the *auth.change_user* permission
+        :raises RPCException: if missing the *auth.change_user* permission
                  when updating another user or when passwords don't match.
 
         .. note::
@@ -139,7 +139,7 @@ def update(
     is_updating_other = request.user != user_being_updated
     # If changing other's attributes, current user must have proper permission
     if is_updating_other and not can_change_user:
-        raise PermissionDenied("Permission denied")
+        raise RPCException(RPC_INTERNAL_ERROR, "Permission denied")
 
     update_fields = []
     for field in editable_fields:
@@ -149,16 +149,17 @@ def update(
         update_fields.append(field)
         if field == "password":
             if is_updating_other:
-                raise PermissionDenied(
-                    "Password updates for other users are not allowed via RPC!"
+                raise RPCException(
+                    RPC_INTERNAL_ERROR,
+                    "Password updates for other users are not allowed via RPC!",
                 )
 
             old_password = values.get("old_password")
             if not old_password:
-                raise PermissionDenied("Old password is required")
+                raise RPCException(RPC_INTERNAL_ERROR, "Old password is required")
 
             if not user_being_updated.check_password(old_password):
-                raise PermissionDenied("Password is incorrect")
+                raise RPCException(RPC_INTERNAL_ERROR, "Password is incorrect")
 
             user_being_updated.set_password(values["password"])
         else:
@@ -186,7 +187,7 @@ def deactivate(query: UserQuery, rpc_context=None):
         :type rpc_context: modernrpc.core.RpcRequestContext
         :return: Serialized list of :class:`django.contrib.auth.models.User` objects
         :rtype: list(dict)
-        :raises PermissionDenied: if missing the *auth.change_user* permission
+        :raises RPCException: if missing the *auth.change_user* permission
                  when updating another user or when passwords don't match.
 
         Specify by user ID::
@@ -234,7 +235,7 @@ def join_group(username, groupname, rpc_context=None):
         :param rpc_context: Provides access to the current request, protocol,
                 entry point name and handler instance from the rpc method
         :type rpc_context: modernrpc.core.RpcRequestContext
-        :raises PermissionDenied: if missing *auth.change_user* permission
+        :raises RPCException: if missing *auth.change_user* permission
     """
     request = rpc_context.request
     user = get_queryset(request).get(username=username)

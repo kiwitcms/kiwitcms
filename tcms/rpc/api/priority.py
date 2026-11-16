@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import PriorityForm
 from tcms.management.models import Priority
@@ -49,7 +50,7 @@ def create(values: PriorityValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Priority` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *management.add_priority* permission
 
     .. versionadded:: 15.2
@@ -60,4 +61,4 @@ def create(values: PriorityValues):
         priority = form.save()
         return model_to_dict(priority)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))

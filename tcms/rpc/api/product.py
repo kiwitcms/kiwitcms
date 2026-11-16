@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from django.forms.models import model_to_dict
+from modernrpc.exceptions import RPC_INTERNAL_ERROR, RPCException
 
 from tcms.management.forms import ProductForm
 from tcms.management.models import Product
@@ -26,7 +27,7 @@ def create(values: ProductValues):
         :type values: dict
         :return: Serialized :class:`tcms.management.models.Product` object
         :rtype: dict
-        :raises ValueError: if input values don't validate
+        :raises RPCException: if input values don't validate
         :raises PermissionDenied: if missing *management.add_product* permission
     """
     form = ProductForm(values)
@@ -35,7 +36,7 @@ def create(values: ProductValues):
         product = form.save()
         return model_to_dict(product)
 
-    raise ValueError(list(form.errors.items()))
+    raise RPCException(RPC_INTERNAL_ERROR, str(list(form.errors.items())))
 
 
 @rpc_method(
