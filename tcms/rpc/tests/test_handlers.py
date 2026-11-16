@@ -11,6 +11,9 @@ from tcms.rpc.handlers import (
     KiwiTCMSJsonRpcHandler,
     KiwiTCMSXmlRpcHandler,
 )
+from tcms.rpc.tests.utils import APIPermissionsTestCase
+from tcms.tests import user_should_have_perm
+from tcms.xmlrpc_wrapper import XmlRPCFault
 
 
 class TestKiwiTCMSJsonRpcHandler(TestCase):
@@ -331,3 +334,22 @@ class TestInspectRPCArgs(TestCase):
 
     def test_accepts_no_arguments(self):
         self.assertIsNone(KiwiTCMSHandlerMixin.inspect_rpc_args("TestCase.filter"))
+
+
+class TestQueryByEmailExact(APIPermissionsTestCase):
+    permission_label = "auth.view_user"
+
+    @classmethod
+    def _fixture_setup(cls):
+        super()._fixture_setup()
+
+        user_should_have_perm(cls.tester, "testcases.view_testcase")
+
+    def verify_api_with_permission(self):
+        result = self.rpc_client.TestCase.filter({"author__email": self.tester.email})
+
+        self.assertGreaterEqual(len(result), 0)
+
+    def verify_api_without_permission(self):
+        with self.assertRaisesRegex(XmlRPCFault, "Unsupported field"):
+            self.rpc_client.TestCase.filter({"author__email": self.tester.email})

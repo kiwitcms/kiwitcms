@@ -148,6 +148,13 @@ class KiwiTCMSHandlerMixin:
             if any(key_str.find(field) > -1 for field in restricted_fields):
                 raise RPCInvalidRequest("Unsupported field")
 
+            if (
+                key_str.endswith("__email")
+                and user
+                and not user.has_perms(("auth.view_user",))
+            ):
+                raise RPCInvalidRequest("Unsupported field")
+
     def process_single_request(self, rpc_request, context):
         try:
             self.inspect_rpc_args(
