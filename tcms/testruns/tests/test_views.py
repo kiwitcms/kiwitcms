@@ -313,6 +313,33 @@ class TestRunStatusMenu(BaseCaseRun):
                 html=True,
             )
 
+    def test_status_controls_are_named_buttons(self):
+        response = self.client.get(self.url)
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+
+        _status = _("Status")
+        self.assertContains(
+            response,
+            f'<span class="status-buttons" role="group" aria-label="{_status}">',
+        )
+        self.assertContains(
+            response,
+            '<span class="test-execution-update-error text-danger" role="alert"></span>',
+            html=True,
+        )
+
+        for execution_status in TestExecutionStatus.objects.all():
+            self.assertContains(
+                response,
+                f'<button type="button" class="change-status-button kiwi-cursor-pointer"'
+                f' title="{execution_status.name}" aria-label="{execution_status.name}"'
+                ' style="font-size: 28px; line-height: 1; margin-right: 10px; padding: 0;'
+                f' border: 0; background: none; color:{execution_status.color}"'
+                f' data-status-id="{execution_status.pk}">'
+                f'<i class="{execution_status.icon}" aria-hidden="true"></i></button>',
+                html=True,
+            )
+
     def test_get_status_options_without_permission(self):
         remove_perm_from_user(self.tester, "testruns.change_testexecution")
         response = self.client.get(self.url)

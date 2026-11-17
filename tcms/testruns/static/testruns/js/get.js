@@ -532,6 +532,12 @@ function getExpandArea (testExecution) {
         })
 
         container.find('.change-status-button').click(function () {
+            const statusButtons = container.find('.status-buttons')
+            // a second press while the first is being saved would send a second update
+            if (statusButtons.attr('aria-busy') === 'true') {
+                return
+            }
+
             const statusId = $(this).attr('data-status-id')
 
             const comment = editor.value().trim()
@@ -540,13 +546,24 @@ function getExpandArea (testExecution) {
             })
 
             const $this = $(this)
+            setStatusButtonsBusy(statusButtons, true)
+            showExecutionUpdateError(testExecution.id, '')
             jsonRPC('TestExecution.update', [testExecution.id, testExecutionUpdateArgs(statusId, testExecution)], execution => {
                 // update TestRun if not filtered
                 reloadRowFor(execution, !isFiltered())
 
+                // the row is about to be drawn again, which would drop a keyboard user's focus
+                const hadFocus = $this.is(':focus')
                 $this.parents('.list-group-item-container').addClass('hidden')
                 // click the .list-group-item-header, not the .test-execution-element itself, because otherwise the handler will fail
-                $this.parents('.test-execution-element').next().find('.list-group-item-header').click()
+                const nextHeader = $this.parents('.test-execution-element').next().find('.list-group-item-header')
+                nextHeader.click()
+                if (hadFocus) {
+                    nextHeader.find('.list-view-pf-expand-toggle').trigger('focus')
+                }
+            }, false, error => {
+                setStatusButtonsBusy(statusButtons, false)
+                showExecutionUpdateError(testExecution.id, error)
             })
         })
     }
@@ -597,6 +614,22 @@ function getExpandArea (testExecution) {
             })
         })
     }
+}
+
+// While a status is being saved its row's buttons stay focusable, so a keyboard
+// user keeps their place, but say they are busy and ignore further presses.
+function setStatusButtonsBusy (statusButtons, busy) {
+    statusButtons.attr('aria-busy', busy ? 'true' : 'false')
+    statusButtons.find('.change-status-button')
+        .attr('aria-disabled', busy ? 'true' : 'false')
+        .css('cursor', busy ? 'progress' : '')
+    statusButtons.find('.status-buttons-busy').toggleClass('hidden', !busy)
+}
+
+// Shows in the execution's row why its status was not saved; an empty message clears it.
+function showExecutionUpdateError (executionId, message) {
+    const text = message ? `${$('#test_run_pk').data('trans-status-not-saved')}: ${message}` : ''
+    $(`.test-execution-${executionId} .test-execution-update-error`).text(text)
 }
 
 function addCommentToExecution (testExecution, input, handler) {
@@ -819,10 +852,11 @@ function changeStatusBulk (statusId) {
 
     selected.executionIds.forEach(executionId => {
         const updateArgs = testExecutionUpdateArgs(statusId, allExecutions[executionId])
+        showExecutionUpdateError(executionId, '')
         jsonRPC('TestExecution.update', [executionId, updateArgs], execution => {
             // update TestRun if not filtered
             reloadRowFor(execution, !isFiltered())
-        })
+        }, false, error => showExecutionUpdateError(executionId, error))
     })
 }
 

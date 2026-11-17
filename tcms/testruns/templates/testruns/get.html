@@ -26,6 +26,7 @@
             data-trans-error-adding-cases="{% trans 'Unconfirmed test cases were not added' %}"
             data-trans-bool-value-required="{% trans 'Type 0 or 1' %}"
             data-trans-comment="{% trans 'Comment' %}:"
+            data-trans-status-not-saved="{% trans 'Status not saved' %}"
             data-current-user="{{ user }}"
         {% for status in execution_statuses %}
             data-trans-execution-status-{{ status.pk }}="{{ status.name }}"
@@ -401,6 +402,7 @@
                                                     <div title="{% trans 'Status' %}" class="list-view-pf-additional-info-item">
                                                         <i class="fa test-execution-status-icon"></i>
                                                         <strong class="test-execution-status-name"></strong>
+                                                        <span class="test-execution-update-error text-danger" role="alert"></span>
                                                     </div>
                                                     <div title="{% trans 'Attachments' %}" class="list-view-pf-additional-info-item js-attachments hidden">
                                                         <span class="fa fa-paperclip"></span>
@@ -492,10 +494,11 @@
                                                 <div class="comment-form hidden-print">
                                                     {{ comment_form.text }}
                                                     <div class="form-group" style="padding: 15px; text-align: right; display: flex; justify-content: flex-end;">
-                                                        <span class="status-buttons">
+                                                        <span class="status-buttons" role="group" aria-label="{% trans 'Status' %}">
                                                             {% for status in execution_statuses%}
-                                                            <i class="{{ status.icon }} change-status-button kiwi-cursor-pointer" title="{{ status.name }}" style="font-size: 28px; margin-right: 10px; color:{{ status.color }}" data-status-id="{{ status.id }}"></i>
+                                                            <button type="button" class="change-status-button kiwi-cursor-pointer" title="{{ status.name }}" aria-label="{{ status.name }}" style="font-size: 28px; line-height: 1; margin-right: 10px; padding: 0; border: 0; background: none; color:{{ status.color }}" data-status-id="{{ status.id }}"><i class="{{ status.icon }}" aria-hidden="true"></i></button>
                                                             {% endfor %}
+                                                            <span class="status-buttons-busy hidden" style="margin-right: 10px;"><span class="spinner spinner-xs spinner-inline"></span><span class="sr-only">{% trans 'Saving' %}</span></span>
                                                         </span>
                                                         <button class="btn btn-default post-comment">{% trans "Save" %}</button>
                                                     </div>

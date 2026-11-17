@@ -235,7 +235,28 @@ export function treeViewBind (selector = '.tree-list-view-pf') {
             if ($itemContainer.children().length) {
                 $itemContainer.toggleClass('hidden')
             }
+            $this.find('.list-view-pf-expand-toggle').attr('aria-expanded', String(!$itemContainer.hasClass('hidden')))
         }
+    })
+
+    // the header expands on a mouse click only, so its arrow is the row's
+    // keyboard toggle: Enter or Space clicks it, and the click reaches the header
+    $(selector).find('.list-group-item-header').each(function () {
+        const $header = $(this)
+        $header.find('.fa-angle-right').first()
+            .addClass('list-view-pf-expand-toggle')
+            .attr({
+                role: 'button',
+                tabindex: '0',
+                'aria-label': 'Details',
+                'aria-expanded': String(!$header.siblings('.list-group-item-container').hasClass('hidden'))
+            })
+            .off('keydown.expandToggle').on('keydown.expandToggle', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    this.click()
+                }
+            })
     })
 }
 
