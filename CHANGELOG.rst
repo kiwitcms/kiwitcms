@@ -1,6 +1,65 @@
 Change Log
 ==========
 
+Kiwi TCMS 17.2 (unreleased)
+---------------------------
+
+.. important::
+
+    This is a minor version release which includes security related updates,
+    new test case template, API changes and internal refactoring.
+
+
+Security
+~~~~~~~~
+
+- Require API requests with``<field>__email`` to have ``auth.view_user``
+  permission. Fixes
+  `GHSA-c2f9-jhxh-pm22 <https://github.com/kiwitcms/kiwitcms/security/advisories/GHSA-c2f9-jhxh-pm22>`_
+- Update django-modern-rpc from 2.1.0 to 2.2.0
+- Update mysqlclient from 2.3.0 to 2.3.1
+
+
+
+Improvements
+~~~~~~~~~~~~
+
+- Update psycopg from 3.3.8 to 3.3.9
+- Add ``Context, Intent, Guardrails, Execution`` template for Test Cases
+  (**Vivek Krishna Choppa, AWS**). Closes
+  `Issue #4724 <https://github.com/kiwitcms/kiwitcms/issues/4724>`_
+
+
+Bug fixes
+~~~~~~~~~
+
+- Preserve parent of root-level TestPlan during deep-clone. Fixes
+  `Issue #4687 <https://github.com/kiwitcms/kiwitcms/issues/4687>`_
+
+
+Database
+~~~~~~~~
+
+- Introduce new migration ``testcases.0026_add_cige_template``
+
+
+API
+~~~
+
+- Treat empty query argument to ``*.remove*`` API methods as invalid request
+  to prevent a malformed call from accidentally deleting all records
+  (**Anton Degtyarev**)
+
+
+Refactoring and testing
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Convert API errors to ``RPCException`` for compatibility with newer
+  django-modern-rpc
+- Pass ``request.user`` to ``KiwiTCMSHandlerMixin.inspect_rpc_args()``
+
+
+
 Kiwi TCMS 17.1 (13 Nov 2026)
 ----------------------------
 
