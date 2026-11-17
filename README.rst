@@ -40,6 +40,9 @@ automated testing. It features bug tracker integration, search pages,
 powerful access control, test automation framework plugins, visual reports and
 rich API layer.
 
+Kiwi TCMS is made in Europe and is used by thousands of teams around the world
+including academia & business; government & military.
+
 Our mission is to transform the testing process by making it more organized,
 transparent & accountable for everyone on your team; to improve engineering
 productivity and participation in testing.
@@ -48,14 +51,14 @@ productivity and participation in testing.
 Brief history
 -------------
 
-* Feb 2009 - Project created by Red Hat, Inc. under the name Nitrate
+* Feb 2009 - Initial release by Red Hat, Inc. under the name Nitrate
 * Nov 2014 - Source code published on GitHub without previous history
-* Mar 2016 - Mr. Senko starts contributing to upstream
+* Mar 2016 - `@atodorov <https://github.com/atodorov/>`_ begins contributing
+  upstream, many PRs unmerged
 * Jan 2017 - First private release on MrSenko.com including updates to
   Django 1.8.x and a working automated test suite
-* May 2017 - Upstream appears to be unresponsive, so
-  `fork <http://mrsenko.com/blog/mr-senko/2017/05/26/nitrate-is-now-kiwitestpad/>`_;
-  first release which removes hard-coded bug-tracker specifications and
+* May 2017 - Upstream appears to be unresponsive, so fork and publish a
+  release which removes hard-coded bug-tracker specifications and
   makes it possible to integrate with external systems
 * Aug 2017 - Support for Django 1.11.x; commit to keeping up to
   date with the latest versions of Django
@@ -63,9 +66,8 @@ Brief history
   started migrating to modern UI using Patternfly
 * Oct 2017 - Launched http://kiwitcms.org and https://public.tenant.kiwitcms.org;
   first bug report from external contributor
-* Nov 2017 - Pushed ``pub.kiwitcms.eu/kiwitcms/kiwitcms`` container;
-  merged upstream API client sources and modified them to work with the current
-  code base
+* Nov 2017 - Published container image; merged upstream API client sources and
+  modified them to work with the current code base
 * Jan 2018 - External contributions are now a fact: German translation by
   @xbln; new team member Anton Sankov
 * Mar 2018 - First pull request from non-team member
@@ -87,6 +89,7 @@ Brief history
 * Mar 2021 - Became **Verified Publisher** on `GitHub Marketplace <https://github.com/marketplace/kiwi-tcms/>`_
 * Jul 2021 - Reached 1M+ pulls on Docker Hub
 * Nov 2023 - Reached 2M+ pulls on Docker Hub
+* Nov 2026 - Container image changed to ``pub.kiwitcms.eu/kiwitcms/kiwitcms``
 
 
 Check it out
