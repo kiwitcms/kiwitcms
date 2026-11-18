@@ -74,7 +74,9 @@ class KiwiTCMSHandlerMixin:
     @staticmethod
     def escape_value(value):
         if isinstance(value, str):
-            return html.escape(value)
+            # unescapeHTML() in tcms/static/js/utils.js expects &#039;
+            # for an apostrophe while html.escape() produces &#x27;
+            return html.escape(value).replace("&#x27;", "&#039;")
         if isinstance(value, timedelta):
             return value.total_seconds()
         return value

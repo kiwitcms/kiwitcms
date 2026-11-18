@@ -27,7 +27,9 @@ class TestKiwiTCMSJsonRpcHandler(TestCase):
         data = "<script>alert('xss')</script>"
         result = self.handler.build_success_result(self.request, data)
         # build_success_result returns a dict with 'result' key
-        self.assertEqual(result.data, html.escape(data))
+        self.assertEqual(
+            result.data, "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;"
+        )
 
     def test_timedelta_conversion(self):
         data = timedelta(hours=1, minutes=30)
@@ -93,7 +95,9 @@ class TestKiwiTCMSXmlRpcHandler(TestCase):
     def test_html_escape_in_string(self):
         data = "<script>alert('xss')</script>"
         result = self.handler.build_success_result(self.request, data)
-        self.assertEqual(result.data, html.escape(data))
+        self.assertEqual(
+            result.data, "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;"
+        )
 
     def test_timedelta_conversion(self):
         data = timedelta(hours=1, minutes=30)
@@ -245,6 +249,17 @@ class TestEscape(TestCase):
         self.assertEqual(result["a"], ["&lt;b&gt;"])
         self.assertEqual(result["b"], ["&lt;b&gt;"])
         self.assertEqual(shared, ["<b>"])
+
+    def test_apostrophe_uses_the_entity_unescapehtml_knows(self):
+        # unescapeHTML() in tcms/static/js/utils.js only reverses &#039;
+        # any other form reaches Markdown.render as a literal entity
+        # and shows up as &#x27; inside fenced code blocks, see
+        # https://github.com/kiwitcms/kiwitcms/issues/4677
+        result = KiwiTCMSHandlerMixin.escape('the user\'s "profile" & <page>')
+
+        self.assertEqual(
+            result, "the user&#039;s &quot;profile&quot; &amp; &lt;page&gt;"
+        )
 
     def test_preserves_container_types(self):
         result = KiwiTCMSHandlerMixin.escape(("<b>", timedelta(seconds=1)))
