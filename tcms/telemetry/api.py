@@ -87,7 +87,9 @@ def status_matrix(query: TestExecutionQuery | None = None):
 
         :param query: Field lookups for :class:`tcms.testruns.models.TestExecution`
         :type query: dict
-        :return: A dictionary, containing the information about test executions
+        :return: A dictionary, containing the information about test executions.
+                 When a test case is executed more than once in the same test run
+                 only the execution with the lowest status weight is returned.
         :rtype: dict
     """
     if query is None:
@@ -98,6 +100,10 @@ def status_matrix(query: TestExecutionQuery | None = None):
     test_cases = list(
         base_query.values("case_id", "case__summary").order_by("case_id").distinct()
     )
+    # A test case may be executed more than once in the same test run,
+    # e.g. once for each parameter value. The matrix shows one execution
+    # per test case & test run so pick the one with the lowest status weight.
+    # This way a failure is never hidden behind a passing execution.
     test_executions = {}
     for execution in base_query.values(
         "pk",
@@ -105,8 +111,9 @@ def status_matrix(query: TestExecutionQuery | None = None):
         "run_id",
         "status_id",
         key=Concat("case_id", Value("-"), "run_id", output_field=CharField()),
-    ):
-        test_executions[execution["key"]] = execution
+    ).order_by("status__weight", "pk"):
+        if execution["key"] not in test_executions:
+            test_executions[execution["key"]] = execution
 
     # test run summaries for column hints, keyed by TR.pk
     test_runs = dict(
