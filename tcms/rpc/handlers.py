@@ -205,7 +205,28 @@ class KiwiTCMSJsonRpcHandler(
     pass
 
 
-class KiwiTCMSXmlRpcHandler(
-    KiwiTCMSHandlerMixin, XmlRpcHandler
-):  # pylint: disable=remove-empty-class
-    pass
+class KiwiTCMSXmlRpcHandler(KiwiTCMSHandlerMixin, XmlRpcHandler):
+
+    @staticmethod
+    def stringify_keys(value):
+        """
+        XML-RPC structs only allow string keys. JSON-RPC converts
+        dictionary keys to strings on its own so do the same here,
+        otherwise results like the one from ``Testing.status_matrix()``
+        can't be sent back to XML-RPC clients.
+        """
+        if isinstance(value, dict):
+            result = {}
+            for key, val in value.items():
+                result[str(key)] = __class__.stringify_keys(val)
+            return result
+        if isinstance(value, (list, tuple)):
+            result = []
+            for item in value:
+                result.append(__class__.stringify_keys(item))
+            return result
+        return value
+
+    def build_success_result(self, request, data):
+        data = __class__.stringify_keys(data)
+        return super().build_success_result(request, data)
