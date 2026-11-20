@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from django.contrib.auth import get_user_model
+from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 
 from tcms.core.history import history_email_for
@@ -9,7 +11,7 @@ def email_case_created(case):
     recipients = get_case_notification_recipients(case)
     if not recipients:
         return
-    cc_list = case.emailing.get_cc_list()
+    cc_list = get_case_notification_cc(case)
 
     subject = _("NEW: TestCase #%(pk)d - %(summary)s") % {
         "pk": case.pk,
@@ -47,16 +49,16 @@ def email_case_update(case):
     recipients = get_case_notification_recipients(case)
     if not recipients:
         return
-    cc_list = case.emailing.get_cc_list()
+    cc_list = get_case_notification_cc(case)
     subject, body = history_email_for(case, case.summary)
     mailto(None, subject, recipients, body, cc=cc_list)
 
 
 def email_case_deletion(case):
     recipients = get_case_notification_recipients(case)
-    cc_list = case.emailing.get_cc_list()
     if not recipients:
         return
+    cc_list = get_case_notification_cc(case)
     subject = _("DELETED: TestCase #%(pk)d - %(summary)s") % {
         "pk": case.pk,
         "summary": case.summary,
@@ -99,3 +101,31 @@ def get_case_notification_recipients(case):
     # don't email author of last change
     recipients.discard(getattr(case.history.latest().history_user, "email", ""))
     return list(filter(None, recipients))
+
+
+def get_case_notification_cc(case):
+    """
+    Return the notification CC list without addresses which belong
+    to inactive user accounts.
+    """
+    cc_list = case.emailing.get_cc_list()
+    if not cc_list:
+        return cc_list
+
+    lower_cc_list = []
+    for email in cc_list:
+        lower_cc_list.append(email.lower())
+
+    inactive_emails = set(
+        get_user_model()
+        .objects.filter(is_active=False)
+        .annotate(lower_email=Lower("email"))
+        .filter(lower_email__in=lower_cc_list)
+        .values_list("lower_email", flat=True)
+    )
+
+    result = []
+    for email in cc_list:
+        if email.lower() not in inactive_emails:
+            result.append(email)
+    return result

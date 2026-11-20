@@ -12,7 +12,10 @@ from parameterized import parameterized
 
 from tcms.core.history import history_email_for
 from tcms.core.utils.mailto import mailto
-from tcms.testcases.helpers.email import get_case_notification_recipients
+from tcms.testcases.helpers.email import (
+    get_case_notification_cc,
+    get_case_notification_recipients,
+)
 from tcms.testcases.models import BugSystem, Template
 from tcms.tests import BasePlanCase, deny_certain_email_addresses
 from tcms.tests.factories import (
@@ -21,6 +24,7 @@ from tcms.tests.factories import (
     TestCaseComponentFactory,
     TestCaseFactory,
     TestCaseTagFactory,
+    UserFactory,
 )
 
 
@@ -206,6 +210,32 @@ class TestSendMailOnCaseIsDeleted(BasePlanCase):
             )
 
             send_mail.assert_not_called()
+
+
+class TestCaseNotificationCC(BasePlanCase):
+    """Test get_case_notification_cc()"""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        inactive_user = UserFactory(email="inactive@example.com")
+        inactive_user.is_active = False
+        inactive_user.save()
+
+        cls.case.emailing.cc_list = (
+            "inactive@example.com,active@example.com,Inactive@Example.com"
+        )
+        cls.case.emailing.save()
+
+    def test_excludes_inactive_users(self):
+        self.assertEqual(["active@example.com"], get_case_notification_cc(self.case))
+
+    def test_returns_empty_list_when_no_cc(self):
+        self.case.emailing.cc_list = ""
+        self.case.emailing.save()
+
+        self.assertEqual([], get_case_notification_cc(self.case))
 
 
 class TestExtraLinkURLField(TestCase):
