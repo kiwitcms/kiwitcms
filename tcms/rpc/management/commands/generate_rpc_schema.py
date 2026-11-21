@@ -19,7 +19,8 @@ from tcms import __release_date__, __version__
 from tcms.rpc.schema import describe_methods
 
 OPENAPI_DESCRIPTION = """
-Kiwi TCMS exposes a JSON-RPC 2.0 API at /json-rpc/.
+Kiwi TCMS exposes a [JSON-RPC 2.0](https://www.jsonrpc.org/specification) API at
+/json-rpc/.
 
 The path keys below identify individual API methods and are not REST routes.
 Every operation is a POST to /json-rpc/ with a JSON-RPC envelope. Authentication
@@ -43,7 +44,7 @@ LLMS_HEADER = f"""# Kiwi TCMS API
 Version: {__version__}
 Release date: {RELEASE_DATE}
 
-Transport: POST JSON-RPC requests to `/json-rpc/`.
+Transport: POST [JSON-RPC](https://www.jsonrpc.org/specification) requests to `/json-rpc/`.
 Authentication: `Auth.login` returns a session cookie.
 Query arguments are Django field lookups: `<field>__<lookup>` or `<relation>__<field>__<lookup>`.
 
@@ -55,7 +56,7 @@ the calling agent:
 - `Referer: <Method>@<kiwitcms-host>`
 - `User-Agent: <agent-or-model>/<version>`
 
-They are metadata only and do not change JSON-RPC semantics.
+They are metadata only and do not change [JSON-RPC](https://www.jsonrpc.org/specification) semantics.
 
 ## Methods
 """
