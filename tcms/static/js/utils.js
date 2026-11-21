@@ -215,6 +215,9 @@ export function unescapeHTML (html) {
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
         .replace(/&#039;/g, '\'')
+        .replace(/&#x27;/g, '\'')
+        .replace(/&#39;/g, '\'')
+        .replace(/&apos;/g, '\'')
     // always keep the ampersand escape last
     // to avoid chain unescape of nested values, see
     // https://github.com/kiwitcms/kiwitcms/issues/2800
