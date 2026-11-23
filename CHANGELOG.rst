@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Kiwi TCMS 17.2 (unreleased)
----------------------------
+Kiwi TCMS 17.2 (17 Nov 2026)
+----------------------------
 
 .. important::
 
