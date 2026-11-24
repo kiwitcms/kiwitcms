@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
@@ -203,29 +204,37 @@ class KiwiUserAdmin(UserAdmin):
     @method_decorator(csrf_protect)
     def delete_view(self, request, object_id, extra_context=None):
         user = User.objects.get(pk=object_id)
-        # check whether the last superuser is being deleted
-        if user.is_superuser and User.objects.filter(is_superuser=True).count() == 1:
-            messages.add_message(
-                request,
-                messages.ERROR,
-                _("This is the last superuser, it cannot be deleted!"),
-            )
-            return HttpResponseRedirect(
-                reverse("admin:auth_user_change", args=[user.pk])
+
+        with transaction.atomic():
+            admins = list(
+                User.objects.select_for_update()
+                .filter(is_superuser=True)
+                .order_by("pk")
             )
 
-        if not _modifying_myself(request, object_id):
-            return super().delete_view(request, object_id, extra_context)
+            # check whether the last superuser is being deleted
+            if user.is_superuser and len(admins) <= 1:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("This is the last superuser, it cannot be deleted!"),
+                )
+                return HttpResponseRedirect(
+                    reverse("admin:auth_user_change", args=[user.pk])
+                )
 
-        # allow deletion of the user own account
-        permission = Permission.objects.get(
-            content_type__app_label="auth", codename="delete_user"
-        )
-        try:
-            request.user.user_permissions.add(permission)
-            return super().delete_view(request, object_id, extra_context)
-        finally:
-            request.user.user_permissions.remove(permission)
+            if not _modifying_myself(request, object_id):
+                return super().delete_view(request, object_id, extra_context)
+
+            # allow deletion of the user own account
+            permission = Permission.objects.get(
+                content_type__app_label="auth", codename="delete_user"
+            )
+            try:
+                request.user.user_permissions.add(permission)
+                return super().delete_view(request, object_id, extra_context)
+            finally:
+                request.user.user_permissions.remove(permission)
 
     def response_delete(self, request, obj_display, obj_id):
         result = super().response_delete(request, obj_display, obj_id)

@@ -1,5 +1,4 @@
-# pylint: disable=invalid-name
-import html
+# pylint: disable=invalid-name,too-many-lines
 from http import HTTPStatus
 
 from django.conf import settings
@@ -178,6 +177,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertRedirects(response, reverse("admin:auth_user_changelist"))
         self.assertFalse(get_user_model().objects.filter(pk=self.tester.pk).exists())
 
+    @override_settings(LANGUAGE_CODE="en")
     def test_superuser_cannot_delete_the_last_superuser(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.admin.username, password="admin-password"
@@ -205,12 +205,22 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertRedirects(
             response, reverse("admin:auth_user_change", args=[self.admin.pk])
         )
-
-        response_text = html.unescape(
-            str(response.content, encoding=settings.DEFAULT_CHARSET)
+        self.assertContains(
+            response, _("This is the last superuser, it cannot be deleted!")
         )
-        self.assertIn(
-            str(_("This is the last superuser, it cannot be deleted!")), response_text
+        self.assertTrue(get_user_model().objects.filter(pk=self.admin.pk).exists())
+
+        response = self.client.post(
+            reverse("admin:auth_user_delete", args=[self.admin.pk]),
+            {"post": "yes"},
+            follow=True,
+        )
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.assertRedirects(
+            response, reverse("admin:auth_user_change", args=[self.admin.pk])
+        )
+        self.assertContains(
+            response, _("This is the last superuser, it cannot be deleted!")
         )
         self.assertTrue(get_user_model().objects.filter(pk=self.admin.pk).exists())
 
