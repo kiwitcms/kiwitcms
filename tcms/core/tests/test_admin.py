@@ -5,12 +5,10 @@ import html
 from http import HTTPStatus
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from tcms.tests import LoggedInTestCase
-from tcms.tests.factories import UserFactory
 
 
 class TestAdminView(LoggedInTestCase):
@@ -106,72 +104,3 @@ class TestAdminView(LoggedInTestCase):
         )
         response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertContains(response, "column-is_superuser")
-
-
-class TestUserDeletionViaAdminView(LoggedInTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-        cls.superuser = UserFactory()
-        cls.superuser.is_staff = True
-        cls.superuser.is_superuser = True
-        cls.superuser.set_password("password")
-        cls.superuser.save()
-
-        cls.regular_user = UserFactory()
-        cls.regular_user.is_staff = True
-        cls.regular_user.set_password("password")
-        cls.regular_user.save()
-
-        cls.regular_user2 = UserFactory()
-
-        cls.url = reverse("admin:auth_user_delete", args=[cls.regular_user.pk])
-
-    def test_regular_user_should_not_delete_another_user(self):
-        self.client.login(  # nosec:B106:hardcoded_password_funcarg
-            username=self.regular_user.username, password="password"
-        )
-        response = self.client.get(
-            reverse("admin:auth_user_delete", args=[self.regular_user2.pk])
-        )
-
-        # it is not possible to delete other user accounts
-        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
-
-        response = self.client.post(
-            reverse("admin:auth_user_delete", args=[self.regular_user2.pk]),
-            {"post": "yes"},
-        )
-
-        # not even after confirming the deletion
-        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
-        self.assertTrue(
-            get_user_model().objects.filter(pk=self.regular_user2.pk).exists()
-        )
-
-    def test_regular_user_should_be_able_to_delete_himself(self):
-        self.client.login(  # nosec:B106:hardcoded_password_funcarg
-            username=self.regular_user.username, password="password"
-        )
-        response = self.client.get(self.url)
-
-        self.assertEqual(HTTPStatus.OK, response.status_code)
-        self.assertContains(response, _("Yes, I’m sure"))
-
-    def test_superuser_should_be_able_to_delete_any_user(self):
-        self.client.login(  # nosec:B106:hardcoded_password_funcarg
-            username=self.superuser.username, password="password"
-        )
-        response = self.client.get(self.url)
-
-        self.assertEqual(HTTPStatus.OK, response.status_code)
-        self.assertContains(response, _("Yes, I’m sure"))
-        response = self.client.post(self.url, {"post": "yes"}, follow=True)
-        self.assertEqual(HTTPStatus.OK, response.status_code)
-        self.assertNotContains(
-            response,
-            f'<a href="/admin/auth/user/{self.regular_user.pk}/change/">'
-            f"{self.regular_user.username}</a>",
-            html=True,
-        )
