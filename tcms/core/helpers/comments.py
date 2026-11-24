@@ -42,13 +42,14 @@ def add_comment(objs, comment_text, user, submit_date=None):
     for obj in objs:
         content_type = ContentType.objects.get_for_model(model=obj.__class__)
         comment = Comment.objects.create(
-            content_type=content_type,
-            site=site,
-            object_pk=obj.pk,
-            user=user,
             comment=comment_text,
+            content_type=content_type,
+            ip_address=None,
+            object_pk=obj.pk,
+            site=site,
             submit_date=submit_date or timezone.now(),
-            user_email=user.email,
+            user=user,
+            user_email="",
             user_name=user.username,
         )
         created.append(comment)

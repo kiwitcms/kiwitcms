@@ -30,6 +30,6 @@ class TestAddComments(BasePlanCase):
             self.assertEqual("new comment", comment.comment)
             self.assertEqual(self.reviewer, comment.user)
             self.assertEqual(self.reviewer.username, comment.user_name)
-            self.assertEqual(self.reviewer.email, comment.user_email)
+            self.assertEqual("", comment.user_email)
             self.assertTrue(comment.is_public)
             self.assertFalse(comment.is_removed)
