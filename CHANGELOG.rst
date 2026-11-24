@@ -1,6 +1,65 @@
 Change Log
 ==========
 
+Kiwi TCMS 17.3 (24 Nov 2026)
+----------------------------
+
+.. important::
+
+    This is a minor version release which includes security related updates,
+    improvements and internal refactoring.
+
+
+Security
+~~~~~~~~
+
+- Sanitize CSS properties in the ``style`` attribute when rendering Markdown
+- Remove redundant permission grant in KiwiUserAdmin and don't promote a
+  registered user to super-user if none exists. Fixes
+  `GHSA-xh3v-gh5f-67c8 <https://github.com/kiwitcms/kiwitcms/security/advisories/GHSA-xh3v-gh5f-67c8>`_
+- Add ``ip_address`` and ``user_email`` to restricted API lookup fields. Fixes
+  `GHSA-g5cw-h4xv-c546 <https://github.com/kiwitcms/kiwitcms/security/advisories/GHSA-g5cw-h4xv-c546>`_
+
+
+Improvements
+~~~~~~~~~~~~
+
+- Update django-simple-captcha from 0.7.0 to 0.8.0
+- Update django-tree-queries from 0.28.0 to 0.29.0
+- Update mysqlclient from 2.3.1 to 2.3.2
+- Update node_modules/pdfmake from 0.3.14 to 0.3.15
+- Update node_modules/webpack from 5.112.2 to 5.113.0
+- Don't store unnecessary ``Comment.user_email``
+
+
+Database
+~~~~~~~~
+
+- Introduce new migration ``core.0002_clear_comments_pii`` which scrubs the
+  ``Comment.user_email`` and ``Comment.ip_address`` fields
+
+
+API
+~~~
+
+- Link the JSON-RPC term to its specification in generated API descriptions
+- Method ``Bug.add_comment()`` now excludes fields ``ip_address``,
+  ``user_email`` from its return value
+- Method ``TestCase.add_comment()`` now excludes fields ``ip_address``,
+  ``user_email`` from its return value
+- Method ``TestExecution.add_comment()`` now excludes fields ``ip_address``,
+  ``user_email`` from its return value
+
+
+Refactoring and testing
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Update pylint from 4.1.3 to 4.1.4
+- Update node_modules/eslint from 10.14.0 to 10.15.0
+- Add more tests for KiwiUserAdmin
+
+
+
 Kiwi TCMS 17.2 (17 Nov 2026)
 ----------------------------
 
