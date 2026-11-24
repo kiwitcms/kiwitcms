@@ -3,9 +3,10 @@ import html
 from http import HTTPStatus
 
 from django.conf import settings
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseForbidden
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from mock import patch
@@ -230,6 +231,46 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         response = self.client.get("/admin/auth/user/")
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertContains(response, _("Deactivate selected accounts"))
+
+    def test_delete_selected_action_is_not_available(self):
+        request = RequestFactory().get(reverse("admin:auth_user_changelist"))
+        request.user = self.admin
+
+        model_admin = admin.site.get_model_admin(get_user_model())
+        self.assertNotIn("delete_selected", model_admin.get_actions(request))
+        self.assertIn("deactivate_selected", model_admin.get_actions(request))
+
+    def test_delete_selected_action_is_not_shown_on_changelist(self):
+        self.client.login(  # nosec:B106:hardcoded_password_funcarg
+            username=self.admin.username, password="admin-password"
+        )
+        response = self.client.get(reverse("admin:auth_user_changelist"))
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.assertContains(response, _("Deactivate selected accounts"))
+        self.assertNotContains(response, 'value="delete_selected"')
+        self.assertNotContains(response, "Delete selected")
+
+    def test_superuser_cannot_delete_users_via_delete_selected_action(self):
+        self.client.login(  # nosec:B106:hardcoded_password_funcarg
+            username=self.admin.username, password="admin-password"
+        )
+
+        response = self.client.post(
+            reverse("admin:auth_user_changelist"),
+            {
+                "_selected_action": [self.inactive1.pk, self.inactive2.pk],
+                "action": "delete_selected",
+                "post": "yes",
+                "select_across": 0,
+                "index": 0,
+            },
+            follow=True,
+        )
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.assertContains(response, _("No action selected."))
+        for user in [self.inactive1, self.inactive2]:
+            self.assertTrue(get_user_model().objects.filter(pk=user.pk).exists())
 
     def test_superuser_can_view_deactivate_button(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
@@ -475,6 +516,31 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
                 response, _("Account '%s' was deactivated") % user, html=True
             )
             self.assertTrue(user.is_active)
+
+    def test_moderator_cannot_delete_users_via_delete_selected_action(self):
+        user_should_have_perm(self.moderator, "auth.view_user")
+        user_should_have_perm(self.moderator, "auth.change_user")
+
+        self.client.login(  # nosec:B106:hardcoded_password_funcarg
+            username=self.moderator.username, password="admin-password"
+        )
+
+        response = self.client.post(
+            reverse("admin:auth_user_changelist"),
+            {
+                "_selected_action": [self.inactive1.pk, self.inactive2.pk],
+                "action": "delete_selected",
+                "post": "yes",
+                "select_across": 0,
+                "index": 0,
+            },
+            follow=True,
+        )
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.assertContains(response, _("No action selected."))
+        for user in [self.inactive1, self.inactive2]:
+            self.assertTrue(get_user_model().objects.filter(pk=user.pk).exists())
 
     def test_moderator_cannot_see_deactivate_button_with_view_only_permissions(
         self,
