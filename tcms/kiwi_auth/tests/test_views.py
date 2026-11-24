@@ -134,10 +134,7 @@ class TestRegistration(TestCase):
 
         user = User.objects.get(username=username)
         self.assertEqual("new-tester@example.com", user.email)
-        if User.objects.filter(is_superuser=True).count() == 1 and user.is_superuser:
-            self.assertTrue(user.is_active)
-        else:
-            self.assertFalse(user.is_active)
+        self.assertFalse(user.is_active)
 
         key = UserActivationKey.objects.get(user=user)
         self.assertEqual(self.fake_activate_key, key.activation_key)
@@ -296,13 +293,18 @@ Kiwi TCMS""") % values + "\n"
         user = User.objects.filter(email__icontains="yahoo")
         self.assertEqual(user.count(), 0)
 
-    def test_first_user_is_superuser(self):
+    def test_first_user_does_not_become_superuser(self):
+        User.objects.all().delete()
+        self.assertFalse(User.objects.filter(is_superuser=True).exists())
         _response, user = self.assert_user_registration("tester_1")
 
-        self.assertTrue(user.is_superuser)
-        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_superuser)
+        self.assertFalse(User.objects.filter(is_superuser=True).exists())
 
     def test_only_one_superuser(self):
+        User.objects.all().delete()
+        self.assertFalse(User.objects.filter(is_superuser=True).exists())
         user1 = User.objects.create_user(
             "kiwi-tester", "tester@example.com", "password"
         )
