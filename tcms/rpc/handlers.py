@@ -135,9 +135,11 @@ class KiwiTCMSHandlerMixin:
             "activation_key",
             "api_key",
             "apikey",
+            "ip_address",
             "password",
             "secret",
             "token",
+            "user_email",
         )
 
         keys_to_check = list(__class__.dict_keys(args))
