@@ -5,6 +5,7 @@ from http import HTTPStatus
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.http import HttpResponseForbidden
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
@@ -399,6 +400,30 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.tester.refresh_from_db()
         self.assertEqual(self.tester.first_name, "Changed by moderator")
 
+    def test_moderator_cannot_grant_superuser_via_change_form(self):
+        user_should_have_perm(self.moderator, "auth.view_user")
+        user_should_have_perm(self.moderator, "auth.change_user")
+
+        self.client.login(  # nosec:B106:hardcoded_password_funcarg
+            username=self.moderator.username, password="admin-password"
+        )
+
+        response = self.client.post(
+            reverse("admin:auth_user_change", args=[self.inactive1.pk]),
+            {
+                "first_name": "Changed by moderator",
+                "username": self.inactive1.username,
+                "date_joined_0": "2018-09-03",
+                "date_joined_1": "13:16:25",
+                "is_superuser": "on",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.inactive1.refresh_from_db()
+        self.assertFalse(self.inactive1.is_superuser)
+
     def test_moderator_can_delete_itself(self):
         user_should_have_perm(self.moderator, "auth.delete_user")
 
@@ -759,6 +784,37 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
 
         self.tester.refresh_from_db()
         self.assertEqual(self.tester.first_name, "Changed by myself")
+
+    def test_regular_user_cannot_change_permissions_via_change_form(self):
+        permission = Permission.objects.get(
+            content_type__app_label="auth", codename="delete_user"
+        )
+        group = Group.objects.get(name="Administrator")
+
+        response = self.client.post(
+            reverse("admin:auth_user_change", args=[self.tester.pk]),
+            {
+                "first_name": "Changed by myself",
+                "username": self.tester.username,
+                "date_joined_0": "2018-09-03",
+                "date_joined_1": "13:16:25",
+                "is_superuser": "on",
+                "groups": [group.pk],
+                "user_permissions": [permission.pk],
+            },
+            follow=True,
+        )
+
+        self.assertEqual(HTTPStatus.OK, response.status_code)
+        self.tester.refresh_from_db()
+        # is_staff is not part of the POST data: if the field was editable
+        # the checked state would be lost and the account demoted. Read-only
+        # fields are dropped from the form so the stored value is preserved.
+        self.assertTrue(self.tester.is_staff)
+        self.assertTrue(self.tester.is_active)
+        self.assertFalse(self.tester.is_superuser)
+        self.assertEqual(0, self.tester.groups.count())
+        self.assertEqual(0, self.tester.user_permissions.count())
 
     def test_regular_user_cant_delete_others(self):
         response = self.client.get(f"/admin/auth/user/{self.admin.pk}/delete/")
