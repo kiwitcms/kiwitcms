@@ -5,7 +5,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponseRedirect
@@ -226,15 +226,7 @@ class KiwiUserAdmin(UserAdmin):
             if not _modifying_myself(request, object_id):
                 return super().delete_view(request, object_id, extra_context)
 
-            # allow deletion of the user own account
-            permission = Permission.objects.get(
-                content_type__app_label="auth", codename="delete_user"
-            )
-            try:
-                request.user.user_permissions.add(permission)
-                return super().delete_view(request, object_id, extra_context)
-            finally:
-                request.user.user_permissions.remove(permission)
+            return super().delete_view(request, object_id, extra_context)
 
     def response_delete(self, request, obj_display, obj_id):
         result = super().response_delete(request, obj_display, obj_id)
