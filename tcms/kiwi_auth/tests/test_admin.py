@@ -399,6 +399,24 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertRedirects(response, "/admin/")
         self.assertFalse(get_user_model().objects.filter(pk=self.tester.pk).exists())
 
+    def test_moderator_cant_delete_other_user_without_delete_permission(self):
+        user_should_have_perm(self.moderator, "auth.view_user")
+
+        self.client.login(  # nosec:B106:hardcoded_password_funcarg
+            username=self.moderator.username, password="admin-password"
+        )
+        response = self.client.get(
+            reverse("admin:auth_user_delete", args=[self.tester.pk])
+        )
+        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+
+        response = self.client.post(
+            reverse("admin:auth_user_delete", args=[self.tester.pk]),
+            {"post": "yes"},
+        )
+        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+        self.assertTrue(get_user_model().objects.filter(pk=self.tester.pk).exists())
+
     def test_moderator_can_change_their_password(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
@@ -679,6 +697,12 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
     def test_regular_user_cant_delete_others(self):
         response = self.client.get(f"/admin/auth/user/{self.admin.pk}/delete/")
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+
+        response = self.client.post(
+            f"/admin/auth/user/{self.admin.pk}/delete/", {"post": "yes"}
+        )
+        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+        self.assertTrue(get_user_model().objects.filter(pk=self.admin.pk).exists())
 
     def test_regular_user_can_delete_myself(self):
         response = self.client.get(

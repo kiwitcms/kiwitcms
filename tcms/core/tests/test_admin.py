@@ -5,6 +5,7 @@ import html
 from http import HTTPStatus
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -137,6 +138,17 @@ class TestUserDeletionViaAdminView(LoggedInTestCase):
 
         # it is not possible to delete other user accounts
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+
+        response = self.client.post(
+            reverse("admin:auth_user_delete", args=[self.regular_user2.pk]),
+            {"post": "yes"},
+        )
+
+        # not even after confirming the deletion
+        self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
+        self.assertTrue(
+            get_user_model().objects.filter(pk=self.regular_user2.pk).exists()
+        )
 
     def test_regular_user_should_be_able_to_delete_himself(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
