@@ -584,7 +584,7 @@ def add_comment(case_id, comment, user_id=None, submit_date=None, rpc_context=No
 
     created = helpers.comments.add_comment([case], comment, comment_author, submit_date)
     # we always create only one comment
-    return model_to_dict(created[0])
+    return model_to_dict(created[0], exclude=["ip_address", "user_email"])
 
 
 @rpc_method(
