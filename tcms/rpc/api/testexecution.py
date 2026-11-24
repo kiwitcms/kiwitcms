@@ -84,7 +84,7 @@ def add_comment(
 
     created = comments.add_comment([execution], comment, comment_author, submit_date)
     # we always create only one comment
-    return model_to_dict(created[0])
+    return model_to_dict(created[0], exclude=["ip_address", "user_email"])
 
 
 @rpc_method(

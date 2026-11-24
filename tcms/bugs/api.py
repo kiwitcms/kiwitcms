@@ -339,7 +339,7 @@ def add_comment(bug_id, comment, user_id=None, submit_date=None, rpc_context=Non
     bug = Bug.objects.get(pk=bug_id)
     created = comments.add_comment([bug], comment, comment_author, submit_date)
     # we always create only one comment
-    return model_to_dict(created[0])
+    return model_to_dict(created[0], exclude=["ip_address", "user_email"])
 
 
 @rpc_method(
