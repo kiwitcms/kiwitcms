@@ -61,7 +61,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.admin.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertContains(response, self.admin.username)
         self.assertContains(response, self.admin2.username)
@@ -73,7 +73,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             username=self.admin.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.tester.pk])
+        )
         self.assertContains(response, self.tester.username)
 
     def test_superuser_can_add_users(self):
@@ -81,11 +83,11 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.admin.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/add/")
+        response = self.client.get(reverse("admin:auth_user_add"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
         response = self.client.post(
-            "/admin/auth/user/add/",
+            reverse("admin:auth_user_add"),
             {
                 "username": "added-by-admin",
                 "password1": __FOR_TESTING__,
@@ -103,7 +105,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             username=self.admin.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.tester.pk])
+        )
         response_str = str(response.content, encoding=settings.DEFAULT_CHARSET)
 
         # 4 readonly fields
@@ -123,7 +127,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertContains(response, "id_user_permissions")
 
         response = self.client.post(
-            f"/admin/auth/user/{self.tester.pk}/change/",
+            reverse("admin:auth_user_change", args=[self.tester.pk]),
             {
                 "first_name": "Changed by admin",
                 # required fields below
@@ -171,7 +175,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             follow=True,
         )
         self.assertEqual(HTTPStatus.OK, response.status_code)
-        self.assertRedirects(response, "/admin/auth/user/")
+        self.assertRedirects(response, reverse("admin:auth_user_changelist"))
         self.assertFalse(get_user_model().objects.filter(pk=self.tester.pk).exists())
 
     def test_superuser_cannot_delete_the_last_superuser(self):
@@ -198,7 +202,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             follow=True,
         )
         self.assertEqual(HTTPStatus.OK, response.status_code)
-        self.assertRedirects(response, f"/admin/auth/user/{self.admin.pk}/change/")
+        self.assertRedirects(
+            response, reverse("admin:auth_user_change", args=[self.admin.pk])
+        )
 
         response_text = html.unescape(
             str(response.content, encoding=settings.DEFAULT_CHARSET)
@@ -213,23 +219,27 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             username=self.admin.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.admin.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.admin.pk])
+        )
         # redirects to change password for themselves
-        self.assertRedirects(response, "/admin/password_change/")
+        self.assertRedirects(response, reverse("admin:password_change"))
 
     def test_superuser_cant_change_password_for_others(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.admin.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.tester.pk])
+        )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
     def test_superuser_can_view_deactivate_selected_accounts_action(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.admin.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertContains(response, _("Deactivate selected accounts"))
 
@@ -289,7 +299,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertContains(response, self.admin.username)
         self.assertContains(response, self.tester.username)
@@ -301,7 +311,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.tester.pk])
+        )
         self.assertContains(response, self.tester.username)
 
         # some fields are read-only
@@ -320,7 +332,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         )
 
         # no delete button
-        self.assertNotContains(response, f"/admin/auth/user/{self.tester.pk}/delete/")
+        self.assertNotContains(
+            response, reverse("admin:auth_user_delete", args=[self.tester.pk])
+        )
 
         # no save buttons
         self.assertNotContains(response, "_save")
@@ -335,7 +349,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/add/")
+        response = self.client.get(reverse("admin:auth_user_add"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
         # only these fields can be edited
@@ -344,7 +358,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertContains(response, "id_password2")
 
         response = self.client.post(
-            "/admin/auth/user/add/",
+            reverse("admin:auth_user_add"),
             {
                 "username": "added-by-moderator",
                 "password1": __FOR_TESTING__,
@@ -365,7 +379,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             username=self.moderator.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.tester.pk])
+        )
         response_str = str(response.content, encoding=settings.DEFAULT_CHARSET)
 
         # 3 readonly fields
@@ -384,7 +400,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertContains(response, "id_user_permissions")
 
         response = self.client.post(
-            f"/admin/auth/user/{self.tester.pk}/change/",
+            reverse("admin:auth_user_change", args=[self.tester.pk]),
             {
                 "first_name": "Changed by moderator",
                 # required fields below
@@ -462,7 +478,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         )
         self.assertEqual(HTTPStatus.OK, response.status_code)
         # b/c our test has only view & delete perms
-        self.assertRedirects(response, "/admin/")
+        self.assertRedirects(response, reverse("admin:index"))
         self.assertFalse(get_user_model().objects.filter(pk=self.tester.pk).exists())
 
     def test_moderator_cant_delete_other_user_without_delete_permission(self):
@@ -488,16 +504,20 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
             username=self.moderator.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.moderator.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.moderator.pk])
+        )
         # redirects to change password for themselves
-        self.assertRedirects(response, "/admin/password_change/")
+        self.assertRedirects(response, reverse("admin:password_change"))
 
     def test_moderator_cant_change_password_for_others(self):
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
 
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.tester.pk])
+        )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
     def test_moderator_cannot_see_deactivate_selected_accounts_action_with_view_only_permissions(
@@ -508,7 +528,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertNotContains(response, _("Deactivate selected accounts"))
 
@@ -525,7 +545,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         )
 
         response = self.client.post(
-            "/admin/auth/user/",
+            reverse("admin:auth_user_changelist"),
             {
                 "_selected_action": [self.inactive1.pk, self.inactive2.pk],
                 "action": "deactivate_selected",
@@ -613,7 +633,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.client.login(  # nosec:B106:hardcoded_password_funcarg
             username=self.moderator.username, password="admin-password"
         )
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.OK, response.status_code)
         self.assertContains(response, _("Deactivate selected accounts"))
 
@@ -633,7 +653,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         )
 
         response = self.client.post(
-            "/admin/auth/user/",
+            reverse("admin:auth_user_changelist"),
             {
                 "_selected_action": [self.inactive1.pk, self.inactive2.pk],
                 "action": "deactivate_selected",
@@ -695,15 +715,19 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertFalse(self.inactive1.is_active)
 
     def test_regular_user_cant_view_list_of_all_users(self):
-        response = self.client.get("/admin/auth/user/")
+        response = self.client.get(reverse("admin:auth_user_changelist"))
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
     def test_regular_user_cant_view_single_profile_without_permission(self):
-        response = self.client.get(f"/admin/auth/user/{self.admin.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.admin.pk])
+        )
         self.assertIsInstance(response, HttpResponseForbidden)
 
     def test_regular_user_can_view_themselves(self):
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.tester.pk])
+        )
         response_str = str(response.content, encoding=settings.DEFAULT_CHARSET)
 
         # only 1 hidden field for csrf
@@ -721,7 +745,9 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertContains(response, "id_last_name")
 
         # Has Delete button
-        self.assertContains(response, f"/admin/auth/user/{self.tester.pk}/delete/")
+        self.assertContains(
+            response, reverse("admin:auth_user_delete", args=[self.tester.pk])
+        )
 
         # Has Save buttons
         self.assertContains(response, "_save")
@@ -729,11 +755,11 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertNotContains(response, "_addanother")
 
     def test_regular_user_cant_add_users(self):
-        response = self.client.get("/admin/auth/user/add/")
+        response = self.client.get(reverse("admin:auth_user_add"))
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
         response = self.client.post(
-            "/admin/auth/user/add/",
+            reverse("admin:auth_user_add"),
             {
                 "username": "added-by-regular-user",
                 "password1": __FOR_TESTING__,
@@ -747,11 +773,13 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         )
 
     def test_regular_user_cant_change_other_users(self):
-        response = self.client.get(f"/admin/auth/user/{self.admin.pk}/change/")
+        response = self.client.get(
+            reverse("admin:auth_user_change", args=[self.admin.pk])
+        )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
         response = self.client.post(
-            f"/admin/auth/user/{self.admin.pk}/change/",
+            reverse("admin:auth_user_change", args=[self.admin.pk]),
             {
                 "first_name": "Changed by regular user",
                 # required fields below
@@ -769,7 +797,7 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
 
     def test_regular_user_can_change_themselves(self):
         response = self.client.post(
-            f"/admin/auth/user/{self.tester.pk}/change/",
+            reverse("admin:auth_user_change", args=[self.tester.pk]),
             {
                 "first_name": "Changed by myself",
                 # required fields below
@@ -817,11 +845,13 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertEqual(0, self.tester.user_permissions.count())
 
     def test_regular_user_cant_delete_others(self):
-        response = self.client.get(f"/admin/auth/user/{self.admin.pk}/delete/")
+        response = self.client.get(
+            reverse("admin:auth_user_delete", args=[self.admin.pk])
+        )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
         response = self.client.post(
-            f"/admin/auth/user/{self.admin.pk}/delete/", {"post": "yes"}
+            reverse("admin:auth_user_delete", args=[self.admin.pk]), {"post": "yes"}
         )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
         self.assertTrue(get_user_model().objects.filter(pk=self.admin.pk).exists())
@@ -841,12 +871,16 @@ class TestUserAdmin(LoggedInTestCase):  # pylint: disable=too-many-public-method
         self.assertFalse(get_user_model().objects.filter(pk=self.tester.pk).exists())
 
     def test_regular_user_can_change_their_password(self):
-        response = self.client.get(f"/admin/auth/user/{self.tester.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.tester.pk])
+        )
         # redirects to change password for themselves
-        self.assertRedirects(response, "/admin/password_change/")
+        self.assertRedirects(response, reverse("admin:password_change"))
 
     def test_regular_user_cant_change_password_for_others(self):
-        response = self.client.get(f"/admin/auth/user/{self.moderator.pk}/password/")
+        response = self.client.get(
+            reverse("admin:auth_user_password_change", args=[self.moderator.pk])
+        )
         self.assertEqual(HTTPStatus.FORBIDDEN, response.status_code)
 
 
