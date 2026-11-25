@@ -130,3 +130,57 @@ class TestBugTrackerFilter(APIPermissionsTestCase):
             XmlRPCFault, 'Authentication failed when calling "BugTracker.filter"'
         ):
             self.rpc_client.BugTracker.filter({})
+
+    def test_filter_by_api_password_is_rejected(self):
+        self.no_permissions_but(self.permission_label)
+
+        with self.assertRaisesRegex(XmlRPCFault, "Unsupported field"):
+            self.rpc_client.BugTracker.filter(
+                {"api_password": "secret"}  # nosec:B105:hardcoded_password_string
+            )
+
+    def test_jsonrpc_filter_by_api_password_startswith_is_rejected(self):
+        self.no_permissions_but(self.permission_label)
+
+        response = self.client.post(
+            "/json-rpc/",
+            {
+                "id": "jsonrpc",
+                "jsonrpc": "2.0",
+                "method": "BugTracker.filter",
+                "params": [
+                    {
+                        "api_password__startswith": "secret"  # nosec:B105:hardcoded_password_string
+                    }
+                ],
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertIn("error", result)
+        self.assertIn("Unsupported field", result["error"]["message"])
+
+    def test_jsonrpc_filter_by_api_password_icontains_is_rejected(self):
+        self.no_permissions_but(self.permission_label)
+
+        response = self.client.post(
+            "/json-rpc/",
+            {
+                "id": "jsonrpc",
+                "jsonrpc": "2.0",
+                "method": "BugTracker.filter",
+                "params": {
+                    "query": {
+                        "api_password__icontains": "secret",  # nosec:B105:hardcoded_password_string
+                    }
+                },
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertIn("error", result)
+        self.assertIn("Unsupported field", result["error"]["message"])
