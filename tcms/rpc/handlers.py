@@ -135,6 +135,8 @@ class KiwiTCMSHandlerMixin:
             "activation_key",
             "api_key",
             "apikey",
+            "api_password",
+            "apipassword",
             "ip_address",
             "password",
             "secret",
