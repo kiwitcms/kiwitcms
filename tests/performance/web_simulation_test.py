@@ -102,7 +102,7 @@ class UserActionsTestCase(BrowserTestCase):
                 await row.locator("div.CodeMirror > div > textarea").fill(
                     f"Recorded by PlayWright at {now}"
                 )
-                await row.locator("span.status-buttons > i.fa-check-circle-o").click()
+                await row.locator("span.status-buttons i.fa-check-circle-o").click()
                 await page.wait_for_load_state()
 
                 gevent.sleep(random.random() * 180)

@@ -15,6 +15,29 @@ SimpleMDE.prototype.markdown = function (text) {
 }
 
 /*
+    SimpleMDE binds Tab and Shift-Tab to indenting, so a keyboard could not leave
+    the editor. They still indent and unindent a list item; anywhere else the
+    browser moves the focus, as it does from a plain text area.
+*/
+function tabLeavesTheEditor (cm) {
+    const CodeMirror = cm.constructor
+    // false: CodeMirror leaves the key to the browser
+    CodeMirror.keyMap.tabLeavesTheEditor = { Tab: false, 'Shift-Tab': false, fallthrough: 'default' }
+
+    // SimpleMDE's mode is an overlay over GitHub-flavoured Markdown, so the list
+    // state is the innermost mode's
+    const inList = () => {
+        const state = cm.getStateAfter(cm.listSelections()[0].head.line)
+        return Boolean(CodeMirror.innerMode(cm.getMode(), state).state.list)
+    }
+    cm.setOption('extraKeys', Object.assign({}, cm.getOption('extraKeys'), {
+        Tab: () => inList() ? cm.execCommand('indentMore') : CodeMirror.Pass,
+        'Shift-Tab': () => inList() ? cm.execCommand('indentLess') : CodeMirror.Pass
+    }))
+    cm.setOption('keyMap', 'tabLeavesTheEditor')
+}
+
+/*
     textArea - a DOM element, not jQuery one, of a text area
     fileUpload - a jQuery element of a hidden file upload field
     autoSaveId - unique ID for autosave!
@@ -71,6 +94,8 @@ export function initSimpleMDE (textArea, fileUploadElement, autoSaveId = window.
             return renderedText
         }
     })
+
+    tabLeavesTheEditor(simpleMDE.codemirror)
 
     fileUploadElement.change(function () {
         const attachment = this.files[0]
