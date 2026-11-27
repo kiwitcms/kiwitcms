@@ -148,6 +148,26 @@ class TestKiwiTCMSXmlRpcHandler(TestCase):
         self.assertEqual(result.data["items"][1]["name"], html.escape("<item2>"))
         self.assertEqual(result.data["items"][1]["time"], 20.0)
 
+    def test_integer_keys_are_converted_to_strings(self):
+        # same shape as the result of Testing.status_matrix()
+        data = {
+            "runs": {1: "<summary>"},
+            "statusColors": {4: "#92d400"},
+            "cases": [{"plans": {2: 3}}],
+        }
+        result = self.handler.build_success_result(self.request, data)
+
+        self.assertEqual(
+            result.data,
+            {
+                "runs": {"1": html.escape("<summary>")},
+                "statusColors": {"4": "#92d400"},
+                "cases": [{"plans": {"2": 3}}],
+            },
+        )
+        # XML-RPC structs only allow string keys
+        self.assertIn("<name>1</name>", self.handler.serializer.dumps(result))
+
 
 class TestUnicodeNormalization(TestCase):
     def test_nfkc_expands_compatibility_characters(self):
